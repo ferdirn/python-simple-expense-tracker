@@ -1,3 +1,5 @@
+"""Simple CLI expense tracker that persists data to a JSON file."""
+
 import json
 import os
 from dataclasses import asdict, dataclass
@@ -11,6 +13,8 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 @dataclass
 class Expense:
+    """Represents a single expense entry."""
+
     id: int
     amount: float
     category: str
@@ -19,13 +23,17 @@ class Expense:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Expense":
+        """Construct an Expense from a plain dictionary."""
         return cls(**data)
 
     def to_dict(self) -> dict:
+        """Serialize the expense to a plain dictionary."""
         return asdict(self)
 
 
 class ExpenseTracker:
+    """Manages persistence and querying of expenses stored in a JSON file."""
+
     def __init__(self, data_file: str = DATA_FILE):
         self.data_file = data_file
 
@@ -56,6 +64,7 @@ class ExpenseTracker:
         return expense
 
     def get_all(self) -> list[Expense]:
+        """Return all stored expenses."""
         return self.load()
 
     def total(self, category: Optional[str] = None) -> float:
@@ -66,68 +75,96 @@ class ExpenseTracker:
         return sum(e.amount for e in expenses)
 
 
-def _format_table(expenses: list[Expense]) -> str:
-    lines = [
-        f"\n{'ID':<5} {'Date':<20} {'Category':<15} {'Amount':>10}  Description",
-        "-" * TABLE_WIDTH,
-    ]
-    for e in expenses:
-        lines.append(
-            f"{e.id:<5} {e.date:<20} {e.category:<15} ${e.amount:>9.2f}  {e.description}"
-        )
-    lines.append("")
-    return "\n".join(lines)
+class ExpenseCLI:
+    """Interactive command-line interface for the expense tracker."""
 
+    MENU = (
+        "\n=== Expense Tracker ===",
+        "1. Add expense",
+        "2. View all expenses",
+        "3. Total spending",
+        "4. Total by category",
+        "5. Exit",
+    )
 
-def _prompt_amount() -> Optional[float]:
-    try:
-        return float(input("Amount: $"))
-    except ValueError:
-        print("Invalid amount.")
-        return None
+    def __init__(self, tracker: ExpenseTracker):
+        self.tracker = tracker
 
-
-def run_cli(tracker: ExpenseTracker) -> None:
-    """Run the interactive CLI loop until the user exits."""
-    while True:
-        print("\n=== Expense Tracker ===")
-        print("1. Add expense")
-        print("2. View all expenses")
-        print("3. Total spending")
-        print("4. Total by category")
-        print("5. Exit")
-        choice = input("Choose an option: ").strip()
-
-        if choice == "1":
-            amount = _prompt_amount()
-            if amount is None:
-                continue
-            category = input("Category (e.g. Food, Transport, Entertainment): ").strip()
-            description = input("Description: ").strip()
-            expense = tracker.add(amount, category, description)
-            print(f"Added expense: {expense.description} (${expense.amount:.2f}) in '{expense.category}'")
-
-        elif choice == "2":
-            expenses = tracker.get_all()
-            if not expenses:
-                print("No expenses found.")
+    def run(self) -> None:
+        """Start the interactive CLI loop until the user exits."""
+        while True:
+            print("\n".join(self.MENU))
+            choice = input("Choose an option: ").strip()
+            handler = self._handlers().get(choice)
+            if handler:
+                handler()
             else:
-                print(_format_table(expenses))
+                print("Invalid option. Please choose 1-5.")
 
-        elif choice == "3":
-            print(f"Total spending: ${tracker.total():.2f}")
+    def _handlers(self) -> dict:
+        return {
+            "1": self._handle_add,
+            "2": self._handle_view,
+            "3": self._handle_total,
+            "4": self._handle_total_by_category,
+            "5": self._handle_exit,
+        }
 
-        elif choice == "4":
-            category = input("Category: ").strip()
-            print(f"Total spending in '{category}': ${tracker.total(category):.2f}")
+    def _handle_add(self) -> None:
+        amount = self._prompt_amount()
+        if amount is None:
+            return
+        category = input("Category (e.g. Food, Transport, Entertainment): ").strip()
+        description = input("Description: ").strip()
+        expense = self.tracker.add(amount, category, description)
+        print(f"Added expense: {expense.description} (${expense.amount:.2f}) in '{expense.category}'")
 
-        elif choice == "5":
-            print("Goodbye!")
-            break
-
+    def _handle_view(self) -> None:
+        expenses = self.tracker.get_all()
+        if not expenses:
+            print("No expenses found.")
         else:
-            print("Invalid option. Please choose 1-5.")
+            print(self._format_table(expenses))
+
+    def _handle_total(self) -> None:
+        print(f"Total spending: ${self.tracker.total():.2f}")
+
+    def _handle_total_by_category(self) -> None:
+        category = input("Category: ").strip()
+        print(f"Total spending in '{category}': ${self.tracker.total(category):.2f}")
+
+    def _handle_exit(self) -> None:
+        print("Goodbye!")
+        raise SystemExit(0)
+
+    @staticmethod
+    def _format_table(expenses: list[Expense]) -> str:
+        """Render a list of expenses as a formatted table string."""
+        lines = [
+            f"\n{'ID':<5} {'Date':<20} {'Category':<15} {'Amount':>10}  Description",
+            "-" * TABLE_WIDTH,
+        ]
+        for e in expenses:
+            lines.append(
+                f"{e.id:<5} {e.date:<20} {e.category:<15} ${e.amount:>9.2f}  {e.description}"
+            )
+        lines.append("")
+        return "\n".join(lines)
+
+    @staticmethod
+    def _prompt_amount() -> Optional[float]:
+        """Prompt the user for an amount and return it, or None on invalid input."""
+        try:
+            return float(input("Amount: $"))
+        except ValueError:
+            print("Invalid amount.")
+            return None
+
+
+# Keep module-level helpers for backwards compatibility with existing tests
+def _format_table(expenses: list[Expense]) -> str:
+    return ExpenseCLI._format_table(expenses)
 
 
 if __name__ == "__main__":
-    run_cli(ExpenseTracker())
+    ExpenseCLI(ExpenseTracker()).run()

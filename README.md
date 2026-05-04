@@ -110,9 +110,19 @@ tracker.total()           # 35.00
 tracker.total("Food")     # 10.00
 ```
 
-### `run_cli(tracker) -> None`
+### `ExpenseCLI(tracker)`
 
-Runs the interactive CLI loop until the user selects **Exit**.
+Wraps `ExpenseTracker` in an interactive menu-driven interface.
+
+```python
+from expense_tracker import ExpenseCLI, ExpenseTracker
+
+ExpenseCLI(ExpenseTracker()).run()
+```
+
+#### `cli.run() -> None`
+
+Starts the interactive CLI loop until the user selects **Exit**.
 
 ## Running Tests
 
