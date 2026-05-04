@@ -85,7 +85,13 @@ For README.md:
 
 Brief description of what this project does.
 
+## Features
+
+Add all app features
+
 ## Installation
+
+Add Prerequisites, Setup project guide, how to run app, how to run a test
 
 ```bash
 # Installation commands based on package.json or requirements.txt

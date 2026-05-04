@@ -35,6 +35,7 @@ class ExpenseTracker:
     """Manages persistence and querying of expenses stored in a JSON file."""
 
     def __init__(self, data_file: str = DATA_FILE):
+        """Initialize the tracker with the path to the JSON storage file."""
         self.data_file = data_file
 
     def load(self) -> list[Expense]:
@@ -88,6 +89,7 @@ class ExpenseCLI:
     )
 
     def __init__(self, tracker: ExpenseTracker):
+        """Initialize the CLI with an ExpenseTracker instance."""
         self.tracker = tracker
 
     def run(self) -> None:
@@ -102,6 +104,7 @@ class ExpenseCLI:
                 print("Invalid option. Please choose 1-5.")
 
     def _handlers(self) -> dict:
+        """Return a mapping of menu-option strings to their handler callables."""
         return {
             "1": self._handle_add,
             "2": self._handle_view,
@@ -111,6 +114,7 @@ class ExpenseCLI:
         }
 
     def _handle_add(self) -> None:
+        """Prompt for expense details and persist a new expense."""
         amount = self._prompt_amount()
         if amount is None:
             return
@@ -120,6 +124,7 @@ class ExpenseCLI:
         print(f"Added expense: {expense.description} (${expense.amount:.2f}) in '{expense.category}'")
 
     def _handle_view(self) -> None:
+        """Print all expenses as a formatted table, or a 'no expenses' message."""
         expenses = self.tracker.get_all()
         if not expenses:
             print("No expenses found.")
@@ -127,13 +132,16 @@ class ExpenseCLI:
             print(self._format_table(expenses))
 
     def _handle_total(self) -> None:
+        """Print the overall total spending across all categories."""
         print(f"Total spending: ${self.tracker.total():.2f}")
 
     def _handle_total_by_category(self) -> None:
+        """Prompt for a category and print total spending within it."""
         category = input("Category: ").strip()
         print(f"Total spending in '{category}': ${self.tracker.total(category):.2f}")
 
     def _handle_exit(self) -> None:
+        """Print a farewell message and exit the process."""
         print("Goodbye!")
         raise SystemExit(0)
 
@@ -163,6 +171,7 @@ class ExpenseCLI:
 
 # Keep module-level helpers for backwards compatibility with existing tests
 def _format_table(expenses: list[Expense]) -> str:
+    """Backwards-compatible shim delegating to ExpenseCLI._format_table."""
     return ExpenseCLI._format_table(expenses)
 
 

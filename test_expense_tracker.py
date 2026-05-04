@@ -4,6 +4,7 @@ from expense_tracker import Expense, ExpenseTracker, _format_table
 
 @pytest.fixture
 def tracker(tmp_path) -> ExpenseTracker:
+    """Provide an ExpenseTracker backed by a temporary file that is cleaned up after each test."""
     return ExpenseTracker(data_file=str(tmp_path / "expenses.json"))
 
 
